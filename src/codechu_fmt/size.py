@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
+from ._helpers import _isnan, _scale_to_unit
+
 __all__ = ["format_size"]
 
 _BINARY_UNITS = ("B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB")
 _DECIMAL_UNITS = ("B", "kB", "MB", "GB", "TB", "PB", "EB")
-
-
-def _isnan(x: float) -> bool:
-    return x != x  # noqa: PLR0124
 
 
 def format_size(num_bytes: float, *, binary: bool = True, precision: int = 1) -> str:
@@ -26,11 +24,7 @@ def format_size(num_bytes: float, *, binary: bool = True, precision: int = 1) ->
     base = 1024.0 if binary else 1000.0
     units = _BINARY_UNITS if binary else _DECIMAL_UNITS
 
-    v = float(num_bytes)
-    idx = 0
-    while v >= base and idx < len(units) - 1:
-        v /= base
-        idx += 1
+    v, idx = _scale_to_unit(num_bytes, units, base)
 
     if idx == 0:
         return f"{int(v)} {units[idx]}"

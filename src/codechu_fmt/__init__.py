@@ -13,7 +13,7 @@ from .duration import format_duration
 from .rate import format_rate
 from .size import format_size
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "__version__",
