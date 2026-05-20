@@ -1,13 +1,14 @@
-# codechu-fmt
-
 ```text
-   ___          _           _
-  / __\___   __| | ___  ___| |__  _   _
- / /  / _ \ / _\` |/ _ \/ __| '_ \| | | |
-/ /__| (_) | (_| |  __/ (__| | | | |_| |
-\____/\___/ \__,_|\___|\___|_| |_|\__,_|
+   ┌──────────────────────────────────────────────────┐
+   │  c o d e c h u — f m t                           │
+   │  0.001s   1.5KB   42m07s   3.14MB/s   1h23m      │
+   │  ·······raw numbers in, human strings out······· │
+   └──────────────────────────────────────────────────┘
 ```
 
+> *Precision formatters for durations, rates and byte sizes.*
+
+# codechu-fmt
 
 Stdlib-only human-readable formatters — durations, rates, and byte
 sizes — extracted from the [Disk Cleaner](https://github.com/codechu/disk-cleaner)
