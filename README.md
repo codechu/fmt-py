@@ -15,9 +15,21 @@
 
 # codechu-fmt
 
-Stdlib-only human-readable formatters — durations, rates, and byte
-sizes — extracted from the [Disk Cleaner](https://github.com/codechu/disk-cleaner)
-toolchain. No external dependencies. Python 3.10+.
+Stdlib-only human-readable formatters: durations, rates, byte
+sizes, bitrates, percent, large-number compact. Consistent NaN /
+negative handling across the family, locale support where it
+matters.
+
+| Call | Output |
+|------|--------|
+| `format_duration(90)` | `1m 30s` |
+| `format_duration(0.0005)` | `500µs` |
+| `format_size(1536)` | `1.5 KiB` |
+| `format_size(-1024)` | `-1.0 KiB` |
+| `format_rate(1.5e6, unit="bytes")` | `1.5 MB/s` |
+| `format_bitrate(2.5e9)` | `2.5 Gbps` |
+| `format_percent(0.42, locale="tr")` | `%42,0` |
+| `format_compact(2_500_000_000)` | `2.5B` |
 
 ## Install
 
@@ -25,142 +37,68 @@ toolchain. No external dependencies. Python 3.10+.
 pip install codechu-fmt
 ```
 
-## API
+Python 3.10+. Zero third-party dependencies.
+
+## Quick example
 
 ```python
-from codechu_fmt import (
-    format_bitrate, format_compact, format_duration,
-    format_percent, format_rate, format_size,
-)
+from codechu_fmt import format_duration, format_size, format_rate
 
-format_duration(90)                       # → '1m 30s'
-format_duration(90, compact=True)         # → '1m30s'
-format_duration(0.5, compact=True)        # → '500ms'
-format_duration(0.0005)                   # → '500µs'
-format_duration(0.0000001)                # → '100ns'
-
-format_rate(123.4)                        # → '123.4/s'
-format_rate(1.5 * 1024**2, unit="bytes")  # → '1.5 MB/s'
-format_rate(1500, unit="ops")             # → '1.5k ops/s'
-
-format_size(1536)                         # → '1.5 KiB'   (binary, IEC)
-format_size(1500, binary=False)           # → '1.5 kB'    (decimal, SI)
-format_size(-1024)                        # → '-1.0 KiB'  (deltas welcome)
-
-format_bitrate(1_500_000)                 # → '1.5 Mbps'  (SI, 1000-base)
-format_bitrate(2_500_000_000)             # → '2.5 Gbps'
-
-format_percent(0.42)                      # → '42.0%'
-format_percent(0.42, locale="tr")         # → '%42,0'
-
-format_compact(15_234)                    # → '15.2K'
-format_compact(2_500_000_000)             # → '2.5B'
+print(format_duration(elapsed_secs))             # '1m 30s'
+print(format_size(file.stat().st_size))          # '1.5 MiB'
+print(format_rate(bytes_read / elapsed_secs,
+                  unit="bytes"))                 # '3.2 MB/s'
 ```
 
-### `format_duration(seconds, *, compact=False)`
+## What you get
 
-Default form renders a human-friendly two-unit duration:
-`0.5s`, `45.3s`, `1m 30s`, `1h 15m`, `1d 5h`, `2y 30d`.
+- **`format_duration`** — two-unit human durations
+  (`0.5s` / `45.3s` / `1m 30s` / `1h 15m` / …). `compact=True` for
+  tight status lines, `integer_seconds=True` for progress bars.
+- **`format_rate`** — items/bytes/ops/custom-label per-second
+  formatter with `precision="auto"` (magnitude-adaptive decimals).
+- **`format_size`** — IEC (`KiB`) or SI (`kB`) byte sizes. Negative
+  values render with a leading `-` so size *deltas* read cleanly.
+- **`format_bitrate`** — SI (1000-based) bitrate ladder for
+  networking (`bps` → `Kbps` → `Mbps` → `Gbps` …).
+- **`format_percent`** — 0–1 ratio → percent string, with `"en"` /
+  `"tr"` locale variants.
+- **`format_compact`** — large numbers → `K`/`M`/`B`/`T` short
+  form for dashboards and counters.
 
-`compact=True` packs the same information into a tighter form suited
-for status lines: `500ms`, `45s`, `1m30s`, `1h15m`.
+NaN renders as `"?"` consistently. Negative inputs keep their
+sign for size/rate/duration *deltas*.
 
-Negative values and NaN render as `"?"`.
+## Read more
 
-### `format_rate(units_per_sec, *, unit="items", precision=1)`
+- [API reference](docs/API.md) — every formatter with signatures,
+  edge cases, and rounding rules.
+- [Recipes](docs/RECIPES.md) — idiomatic patterns for log lines,
+  progress bars, status fields.
+- [Migration guide](docs/MIGRATION.md) — between major versions.
+- [Changelog](CHANGELOG.md)
 
-- `unit="items"` (default) → `123.4/s`
-- `unit="bytes"`            → IEC byte-rate, e.g. `1.5 MB/s`
-- `unit="ops"`              → decimal-scaled, e.g. `2.5M ops/s`
-- any other label           → `42.0 req/s`-style suffix
-
-### `format_size(num_bytes, *, binary=True, precision=1)`
-
-- `binary=True` (default) → IEC powers of 1024: `KiB`, `MiB`, `GiB`, …
-- `binary=False`           → SI powers of 1000: `kB`, `MB`, `GB`, …
-
-### `format_bitrate(bps, *, precision=1)`
-
-SI (1000-based) bitrate ladder for networking: `bps`, `Kbps`, `Mbps`,
-`Gbps`, `Tbps`, `Pbps`. Input is bits per second.
-
-### `format_percent(ratio, *, precision=1, locale="en")`
-
-0-1 ratio → percent string. `locale="en"` → `"42.0%"`; `locale="tr"`
-→ `"%42,0"` (comma decimal, leading `%`). Other locales fall back
-to `"en"`.
-
-### `format_compact(n, *, precision=1)`
-
-Large numbers → short SI-prefix string using K/M/B/T (English
-engineering convention). `15_234` → `"15.2K"`, `2.5e9` → `"2.5B"`.
-
-## Negative & non-finite handling
-
-All formatters share the same conventions:
-
-| Function          | NaN          | +Inf / -Inf            | Negative          |
-| ----------------- | ------------ | ---------------------- | ----------------- |
-| `format_size`     | `"?"`        | scales to top unit     | `-` prefix        |
-| `format_rate`     | `"?"`        | scales to top unit     | `-` prefix        |
-| `format_duration` | `"?"`        | scales to years branch | `-` prefix        |
-| `format_bitrate`  | `"NaN bps"`  | `"Inf bps"` / `"-Inf bps"` | `-` prefix    |
-| `format_percent`  | `"NaN%"` / `"%NaN"` | `"Inf%"` / `"-Inf%"` | `-` prefix |
-| `format_compact`  | `"NaN"`      | `"Inf"` / `"-Inf"`     | `-` prefix        |
-
-## Design
-
-- **Pure stdlib.** Zero third-party dependencies. The whole library is
-  three small modules.
-- **Predictable strings.** Output is stable across platforms and
-  locales — no thousand separators, no locale formatting.
-- **Defensive.** Negative, NaN, and Inf inputs never raise. NaN
-  renders as `"?"` for the original three formatters and as
-  `"NaN…"` for the v0.3 additions; negatives carry a leading `-`
-  so deltas read naturally. Useful when the source is a noisy
-  counter.
-
-## Tests
-
-```bash
-pip install -e ".[dev]"
-pytest -q
-```
-
-Coverage gate: ≥90 %.
-
-## Documentation
-
-- [API reference](docs/API.md) — every public symbol, signatures, edge cases
-- [Migration guide](docs/MIGRATION.md) — v0.1 → v0.2 (drop-in replacement)
-- [Recipes](docs/RECIPES.md) — idiomatic patterns for CLIs, logs, progress bars
-
-## Codechu family
-
-Companion libraries from the Codechu Python ecosystem:
+## Family
 
 | Library | Purpose |
 |---------|---------|
-| [codechu-meter](https://pypi.org/project/codechu-meter/) | Timing primitives — Stopwatch, ETA, percentile, histogram |
+| [codechu-meter](https://pypi.org/project/codechu-meter/) | Timing — stopwatch, ETA, rate, histogram |
 | [codechu-spark](https://pypi.org/project/codechu-spark/) | Unicode sparklines, mini bar charts, heatmaps |
-| [codechu-cli](https://pypi.org/project/codechu-cli/) | CLI primitives — colors, progress, spinners, prompts, table |
-| [codechu-events](https://pypi.org/project/codechu-events/) | Thread-safe multi-channel pub/sub bus with replay |
-| [codechu-xdg](https://pypi.org/project/codechu-xdg/) | XDG Base Directory helpers, vendor-namespaced |
-| [codechu-treeviz](https://pypi.org/project/codechu-treeviz/) | Tree visualization — treemap, sunburst, icicle, flame |
-| [codechu-fs](https://pypi.org/project/codechu-fs/) | Filesystem primitives — atomic write, XDG trash, safe walk |
-| [codechu-term](https://pypi.org/project/codechu-term/) | Terminal capability detection, alt buffer, raw mode |
-| [codechu-color](https://pypi.org/project/codechu-color/) | Color palettes, WCAG contrast, color-blind variants |
-| [codechu-treedata](https://pypi.org/project/codechu-treedata/) | N-ary tree data structures and algorithms |
-| [codechu-log](https://pypi.org/project/codechu-log/) | Structured logging — context, JSON, rotation, redaction |
+| [codechu-cli](https://pypi.org/project/codechu-cli/) | CLI primitives — colors, progress, prompts |
+| [codechu-color](https://pypi.org/project/codechu-color/) | Color palettes, WCAG contrast |
 | [codechu-i18n](https://pypi.org/project/codechu-i18n/) | Internationalization — locale, plural rules, RTL |
-| [codechu-ipc](https://pypi.org/project/codechu-ipc/) | Local IPC — Unix socket, FIFO, JSON-line protocol |
-| [codechu-config](https://pypi.org/project/codechu-config/) | Schema-driven config — atomic save, migrations |
+
+Full ecosystem: [github.com/codechu](https://github.com/codechu).
 
 ## Credits
 
-- Inspired by [humanize](https://github.com/python-humanize/humanize) for the conceptual goal of human-readable values
-- IEC binary prefix convention follows IEEE 1541-2002
+- IEC byte units per
+  [IEC 80000-13](https://en.wikipedia.org/wiki/Binary_prefix).
+- SI bitrate conventions per
+  [Wikipedia: Data-rate units](https://en.wikipedia.org/wiki/Data-rate_units).
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+Part of [Codechu](https://github.com/codechu).
