@@ -1,9 +1,16 @@
 ```text
-   ┌──────────────────────────────────────────────────┐
-   │  c o d e c h u — f m t                           │
-   │  0.001s   1.5KB   42m07s   3.14MB/s   1h23m      │
-   │  ·······raw numbers in, human strings out······· │
-   └──────────────────────────────────────────────────┘
+━━━━━━━━━━━━ c o d e c h u  ·  f m t ━━━━━━━━━━━━
+
+   format_duration(90)                  →  1m 30s
+   format_duration(0.0005)              →  500µs
+   format_size(1536)                    →  1.5 KiB
+   format_size(-1024)                   →  -1.0 KiB
+   format_rate(1.5e6, unit="bytes")     →  1.5 MB/s
+   format_bitrate(2.5e9)                →  2.5 Gbps
+   format_percent(0.42, locale="tr")    →  %42,0
+   format_compact(2_500_000_000)        →  2.5B
+
+━━━━━━━━━ raw numbers in. human strings out. ━━━━━━━━━
 ```
 
 [![PyPI](https://img.shields.io/pypi/v/codechu-fmt.svg)](https://pypi.org/project/codechu-fmt/)
@@ -19,17 +26,6 @@ Stdlib-only human-readable formatters: durations, rates, byte
 sizes, bitrates, percent, large-number compact. Consistent NaN /
 negative handling across the family, locale support where it
 matters.
-
-| Call | Output |
-|------|--------|
-| `format_duration(90)` | `1m 30s` |
-| `format_duration(0.0005)` | `500µs` |
-| `format_size(1536)` | `1.5 KiB` |
-| `format_size(-1024)` | `-1.0 KiB` |
-| `format_rate(1.5e6, unit="bytes")` | `1.5 MB/s` |
-| `format_bitrate(2.5e9)` | `2.5 Gbps` |
-| `format_percent(0.42, locale="tr")` | `%42,0` |
-| `format_compact(2_500_000_000)` | `2.5B` |
 
 ## Install
 
