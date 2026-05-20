@@ -4,6 +4,31 @@
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-05-20
+
+### Added
+- `format_duration(*, integer_seconds=False)` — when ``True``, drops
+  the sub-second branch and rounds to whole seconds. The separator
+  still honours ``compact``. Useful for progress bars and ETA
+  displays where sub-second precision is meaningless. Enables
+  callers (e.g. `codechu-cli`'s progress bar) to defork their inline
+  helpers and use `format_duration` directly.
+- `format_rate(*, precision="auto")` — magnitude-adaptive decimals
+  matching the convention used by terminal progress bars:
+  ``≥100`` → 0, ``≥10`` → 1, ``<10`` → 2. Applied to the displayed
+  value, so ``bytes`` and ``ops`` use the post-scaling magnitude.
+- `format_rate(*, bare_items=True)` — when set to ``False`` keeps the
+  ``items`` label visible (``"42.0 items/s"`` instead of ``"42.0/s"``).
+  No effect on non-``items`` units.
+
+### Notes
+- Both additions are non-breaking: defaults preserve the v0.3.x
+  behaviour exactly.
+- Adopters migrating *from* inline integer-second helpers should
+  note that `format_duration` promotes ≥3600 s to ``"1h Xm"``
+  whereas a common forked helper stops at minutes (``"61m 40s"``) —
+  the hour expansion is the intended improvement of consolidation.
+
 ## [0.3.0] — 2026-05-20
 
 ### Added

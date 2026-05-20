@@ -16,7 +16,12 @@ _DEFAULT_SEP = " "
 _COMPACT_SEP = ""
 
 
-def format_duration(seconds: float, *, compact: bool = False) -> str:
+def format_duration(
+    seconds: float,
+    *,
+    compact: bool = False,
+    integer_seconds: bool = False,
+) -> str:
     """Human-readable duration.
 
     Default form (``compact=False``)::
@@ -36,9 +41,22 @@ def format_duration(seconds: float, *, compact: bool = False) -> str:
         90     → "1m30s"
         3700   → "1h1m"
 
+    Integer-seconds form (``integer_seconds=True``)::
+
+        0.4   → "0s"
+        45    → "45s"
+        90    → "1m 30s"
+        90 with compact → "1m30s"
+        3700  → "1h 1m"
+
+    ``integer_seconds=True`` drops the sub-second branch and rounds to
+    whole seconds — useful for progress bars and ETA displays where a
+    sub-second tick is meaningless. The separator still honours
+    ``compact``.
+
     Sub-millisecond values render with ``µs`` (microseconds) or ``ns``
-    (nanoseconds) in both forms; the µs/ns granularity is the same
-    regardless of ``compact``.
+    (nanoseconds) in both forms (when ``integer_seconds=False``); the
+    µs/ns granularity is the same regardless of ``compact``.
 
     NaN renders as ``"?"``. Negative inputs render with a leading
     ``-`` (e.g. ``-1m 30s``).
@@ -49,34 +67,41 @@ def format_duration(seconds: float, *, compact: bool = False) -> str:
     if seconds < 0:
         sign = "-"
         seconds = -seconds
-    return sign + _format(seconds, compact=compact)
+    return sign + _format(seconds, compact=compact, integer_seconds=integer_seconds)
 
 
-def _format(seconds: float, *, compact: bool) -> str:
+def _format(seconds: float, *, compact: bool, integer_seconds: bool = False) -> str:
     sep = _COMPACT_SEP if compact else _DEFAULT_SEP
 
-    # Sub-millisecond: nanoseconds.
-    if seconds > 0 and seconds < 1e-6:
-        ns = int(round(seconds * 1_000_000_000))
-        return f"{ns}ns"
+    if integer_seconds:
+        # No sub-second granularity; everything rounds to whole seconds.
+        s = int(round(seconds))
+        if s < 60:
+            return f"{s}s"
+        seconds = float(s)  # fall through to the larger-unit branches
+    else:
+        # Sub-millisecond: nanoseconds.
+        if seconds > 0 and seconds < 1e-6:
+            ns = int(round(seconds * 1_000_000_000))
+            return f"{ns}ns"
 
-    # Sub-millisecond: microseconds.
-    if seconds > 0 and seconds < 1e-3:
-        us = int(round(seconds * 1_000_000))
-        return f"{us}µs"
+        # Sub-millisecond: microseconds.
+        if seconds > 0 and seconds < 1e-3:
+            us = int(round(seconds * 1_000_000))
+            return f"{us}µs"
 
-    # Sub-second: the two forms diverge structurally (ms vs decimal s).
-    if seconds < 1.0:
-        if compact:
-            ms = int(round(seconds * 1000))
-            return f"{ms}ms"
-        return f"{seconds:.1f}s"
+        # Sub-second: the two forms diverge structurally (ms vs decimal s).
+        if seconds < 1.0:
+            if compact:
+                ms = int(round(seconds * 1000))
+                return f"{ms}ms"
+            return f"{seconds:.1f}s"
 
-    # 1s ≤ s < 60s
-    if seconds < 60.0:
-        if compact:
-            return f"{int(round(seconds))}s"
-        return f"{seconds:.1f}s"
+        # 1s ≤ s < 60s
+        if seconds < 60.0:
+            if compact:
+                return f"{int(round(seconds))}s"
+            return f"{seconds:.1f}s"
 
     total = int(round(seconds))
 

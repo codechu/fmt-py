@@ -19,7 +19,7 @@ from .percent import format_percent
 from .rate import format_rate
 from .size import format_size
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "__version__",
