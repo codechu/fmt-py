@@ -77,6 +77,12 @@ pytest -q
 
 Coverage gate: ≥90 %.
 
+## Documentation
+
+- [API reference](docs/API.md) — every public symbol, signatures, edge cases
+- [Migration guide](docs/MIGRATION.md) — v0.1 → v0.2 (drop-in replacement)
+- [Recipes](docs/RECIPES.md) — idiomatic patterns for CLIs, logs, progress bars
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
