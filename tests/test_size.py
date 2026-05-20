@@ -46,9 +46,20 @@ def test_precision():
     assert s.endswith("MiB")
 
 
-def test_negative_and_nan():
-    assert format_size(-1) == "?"
+def test_nan():
     assert format_size(float("nan")) == "?"
+
+
+def test_negative_bytes():
+    assert format_size(-1) == "-1 B"
+
+
+def test_negative_kib():
+    assert format_size(-1024) == "-1.0 KiB"
+
+
+def test_negative_decimal():
+    assert format_size(-1_500_000, binary=False) == "-1.5 MB"
 
 
 def test_max_unit_cap():

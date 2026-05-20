@@ -134,6 +134,56 @@ Custom labels do **not** get decimal scaling — `1500` stays as
 `1500.0`, not `1.5k`. If you want `1.5k req/s`, scale the value
 yourself or use `unit="ops"` and rewrite the suffix.
 
+## 7. Network bandwidth display (bitrate + IEC)
+
+Network UIs typically need both a `Mbps` link-rate label and a
+human-readable per-second byte counter. Use
+[`format_bitrate`](API.md#format_bitrate) for the line rate and
+[`format_rate`](API.md#format_rate) with `unit="bytes"` for the
+traffic counter.
+
+```python
+from codechu_fmt import format_bitrate, format_rate
+
+bytes_per_sec = 187_500       # 1.5 Mbps link saturated
+bits_per_sec = bytes_per_sec * 8
+
+link  = format_bitrate(bits_per_sec)            # → '1.5 Mbps'
+flow  = format_rate(bytes_per_sec, unit="bytes") # → '183.1 KB/s'
+print(f"{link}   ({flow})")
+# → '1.5 Mbps   (183.1 KB/s)'
+```
+
+The two labels speak to different audiences: networking gear quotes
+bits per second (SI, 1000-based); file-transfer dialogs quote bytes
+per second (IEC, 1024-based). Showing both side-by-side makes the
+8× / 1024-vs-1000 relationship explicit and avoids the perennial
+"why is my gigabit link only doing 117 MB/s" support ticket.
+
+## 8. Locale-aware percent for i18n UIs
+
+Turkish (and several other locales) write percent with a leading `%`
+and a comma decimal separator: `%42,5` not `42.5%`. Use
+[`format_percent`](API.md#format_percent) and switch on the user's
+locale.
+
+```python
+from codechu_fmt import format_percent
+
+def progress_label(done: int, total: int, *, locale: str) -> str:
+    ratio = done / total if total else 0.0
+    return format_percent(ratio, precision=1, locale=locale)
+
+progress_label(42, 100, locale="en")  # → '42.0%'
+progress_label(42, 100, locale="tr")  # → '%42,0'
+```
+
+For GTK / Qt apps, source the locale from `locale.getlocale()` or the
+app's settings, map to `"en"` / `"tr"` (others fall back to `"en"`),
+and pass it through. Keep the *formatting* locale decoupled from the
+*translation* locale if your UI ever needs to render an English label
+with a Turkish-formatted number, or vice versa.
+
 ## See also
 
 - [API reference](API.md) — full signatures and edge-case tables

@@ -54,8 +54,25 @@ def test_custom_unit():
     assert s == "42.0 req/s"
 
 
-def test_negative_and_nan():
-    assert format_rate(-1) == "?"
+def test_nan_all_units():
     assert format_rate(float("nan")) == "?"
-    assert format_rate(-1, unit="bytes") == "?"
-    assert format_rate(-1, unit="ops") == "?"
+    assert format_rate(float("nan"), unit="bytes") == "?"
+    assert format_rate(float("nan"), unit="ops") == "?"
+    assert format_rate(float("nan"), unit="req") == "?"
+
+
+def test_negative_items():
+    assert format_rate(-5) == "-5.0/s"
+
+
+def test_negative_bytes():
+    assert format_rate(-1024, unit="bytes") == "-1.0 KB/s"
+    assert format_rate(-512, unit="bytes") == "-512 B/s"
+
+
+def test_negative_ops():
+    assert format_rate(-1500, unit="ops") == "-1.5k ops/s"
+
+
+def test_negative_custom():
+    assert format_rate(-42, unit="req") == "-42.0 req/s"

@@ -21,27 +21,49 @@ def format_duration(seconds: float, *, compact: bool = False) -> str:
 
     Default form (``compact=False``)::
 
-        0.5    → "0.5s"
-        45     → "45.0s"
-        90     → "1m 30s"
-        3700   → "1h 1m"
+        0.0000001 → "100ns"
+        0.0005    → "500µs"
+        0.5       → "0.5s"
+        45        → "45.0s"
+        90        → "1m 30s"
+        3700      → "1h 1m"
 
     Compact form (``compact=True``)::
 
+        0.0005 → "500µs"
         0.5    → "500ms"
         45     → "45s"
         90     → "1m30s"
         3700   → "1h1m"
 
-    Negative values and NaN render as ``"?"``.
+    Sub-millisecond values render with ``µs`` (microseconds) or ``ns``
+    (nanoseconds) in both forms; the µs/ns granularity is the same
+    regardless of ``compact``.
+
+    NaN renders as ``"?"``. Negative inputs render with a leading
+    ``-`` (e.g. ``-1m 30s``).
     """
-    if _isnan(seconds) or seconds < 0:
+    if _isnan(seconds):
         return "?"
-    return _format(seconds, compact=compact)
+    sign = ""
+    if seconds < 0:
+        sign = "-"
+        seconds = -seconds
+    return sign + _format(seconds, compact=compact)
 
 
 def _format(seconds: float, *, compact: bool) -> str:
     sep = _COMPACT_SEP if compact else _DEFAULT_SEP
+
+    # Sub-millisecond: nanoseconds.
+    if seconds > 0 and seconds < 1e-6:
+        ns = int(round(seconds * 1_000_000_000))
+        return f"{ns}ns"
+
+    # Sub-millisecond: microseconds.
+    if seconds > 0 and seconds < 1e-3:
+        us = int(round(seconds * 1_000_000))
+        return f"{us}µs"
 
     # Sub-second: the two forms diverge structurally (ms vs decimal s).
     if seconds < 1.0:

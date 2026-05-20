@@ -4,6 +4,33 @@
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-20
+
+### Added
+- `format_bitrate(bps, *, precision=1)` — SI 1000-based bits-per-second
+  ladder (`bps`, `Kbps`, `Mbps`, `Gbps`, `Tbps`, `Pbps`) for networking
+  UIs.
+- `format_percent(ratio, *, precision=1, locale="en")` — 0-1 ratio →
+  percent string, locale-aware. Supports `"en"` (dot decimal, trailing
+  `%`) and `"tr"` (comma decimal, leading `%`). Unknown locales fall
+  back to `"en"`.
+- `format_compact(n, *, precision=1)` — large numbers → short SI-prefix
+  form `K`/`M`/`B`/`T` (English engineering convention) for dashboards
+  and counters.
+- `format_duration` now renders sub-millisecond values with `µs`
+  (microseconds) and `ns` (nanoseconds) in both default and compact
+  forms.
+
+### Changed
+- **Breaking**: negative inputs now render with a leading `-` prefix
+  across all formatters instead of `"?"`. `format_size(-1024)` →
+  `"-1.0 KiB"`, `format_rate(-5)` → `"-5.0/s"`, `format_duration(-90)`
+  → `"-1m 30s"`. Makes size/rate/duration *deltas* readable.
+- NaN handling for the original three formatters (`format_size`,
+  `format_rate`, `format_duration`) is unchanged — still `"?"`. New
+  v0.3 formatters use `"NaN…"`-style strings; see the README parity
+  table.
+
 ## [0.2.0] — 2026-05-20
 
 ### Changed

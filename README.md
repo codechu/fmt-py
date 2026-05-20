@@ -23,11 +23,16 @@ pip install codechu-fmt
 ## API
 
 ```python
-from codechu_fmt import format_duration, format_rate, format_size
+from codechu_fmt import (
+    format_bitrate, format_compact, format_duration,
+    format_percent, format_rate, format_size,
+)
 
 format_duration(90)                       # → '1m 30s'
 format_duration(90, compact=True)         # → '1m30s'
 format_duration(0.5, compact=True)        # → '500ms'
+format_duration(0.0005)                   # → '500µs'
+format_duration(0.0000001)                # → '100ns'
 
 format_rate(123.4)                        # → '123.4/s'
 format_rate(1.5 * 1024**2, unit="bytes")  # → '1.5 MB/s'
@@ -35,6 +40,16 @@ format_rate(1500, unit="ops")             # → '1.5k ops/s'
 
 format_size(1536)                         # → '1.5 KiB'   (binary, IEC)
 format_size(1500, binary=False)           # → '1.5 kB'    (decimal, SI)
+format_size(-1024)                        # → '-1.0 KiB'  (deltas welcome)
+
+format_bitrate(1_500_000)                 # → '1.5 Mbps'  (SI, 1000-base)
+format_bitrate(2_500_000_000)             # → '2.5 Gbps'
+
+format_percent(0.42)                      # → '42.0%'
+format_percent(0.42, locale="tr")         # → '%42,0'
+
+format_compact(15_234)                    # → '15.2K'
+format_compact(2_500_000_000)             # → '2.5B'
 ```
 
 ### `format_duration(seconds, *, compact=False)`
@@ -59,14 +74,46 @@ Negative values and NaN render as `"?"`.
 - `binary=True` (default) → IEC powers of 1024: `KiB`, `MiB`, `GiB`, …
 - `binary=False`           → SI powers of 1000: `kB`, `MB`, `GB`, …
 
+### `format_bitrate(bps, *, precision=1)`
+
+SI (1000-based) bitrate ladder for networking: `bps`, `Kbps`, `Mbps`,
+`Gbps`, `Tbps`, `Pbps`. Input is bits per second.
+
+### `format_percent(ratio, *, precision=1, locale="en")`
+
+0-1 ratio → percent string. `locale="en"` → `"42.0%"`; `locale="tr"`
+→ `"%42,0"` (comma decimal, leading `%`). Other locales fall back
+to `"en"`.
+
+### `format_compact(n, *, precision=1)`
+
+Large numbers → short SI-prefix string using K/M/B/T (English
+engineering convention). `15_234` → `"15.2K"`, `2.5e9` → `"2.5B"`.
+
+## Negative & non-finite handling
+
+All formatters share the same conventions:
+
+| Function          | NaN          | +Inf / -Inf            | Negative          |
+| ----------------- | ------------ | ---------------------- | ----------------- |
+| `format_size`     | `"?"`        | scales to top unit     | `-` prefix        |
+| `format_rate`     | `"?"`        | scales to top unit     | `-` prefix        |
+| `format_duration` | `"?"`        | scales to years branch | `-` prefix        |
+| `format_bitrate`  | `"NaN bps"`  | `"Inf bps"` / `"-Inf bps"` | `-` prefix    |
+| `format_percent`  | `"NaN%"` / `"%NaN"` | `"Inf%"` / `"-Inf%"` | `-` prefix |
+| `format_compact`  | `"NaN"`      | `"Inf"` / `"-Inf"`     | `-` prefix        |
+
 ## Design
 
 - **Pure stdlib.** Zero third-party dependencies. The whole library is
   three small modules.
 - **Predictable strings.** Output is stable across platforms and
   locales — no thousand separators, no locale formatting.
-- **Defensive.** Negative inputs and NaN never raise; they render as
-  `"?"`. Useful when the source is a noisy counter.
+- **Defensive.** Negative, NaN, and Inf inputs never raise. NaN
+  renders as `"?"` for the original three formatters and as
+  `"NaN…"` for the v0.3 additions; negatives carry a leading `-`
+  so deltas read naturally. Useful when the source is a noisy
+  counter.
 
 ## Tests
 

@@ -16,10 +16,16 @@ def format_size(num_bytes: float, *, binary: bool = True, precision: int = 1) ->
     ``binary=True`` (default): IEC ``1.5 MiB`` (1024-based).
     ``binary=False``:          SI  ``1.6 MB``  (1000-based).
 
-    Negative values and NaN render as ``"?"``.
+    NaN renders as ``"?"``. Negative inputs are formatted with a
+    leading ``-`` (e.g. ``-1.0 KiB``) so deltas/diffs read naturally.
     """
-    if _isnan(num_bytes) or num_bytes < 0:
+    if _isnan(num_bytes):
         return "?"
+
+    sign = ""
+    if num_bytes < 0:
+        sign = "-"
+        num_bytes = -num_bytes
 
     base = 1024.0 if binary else 1000.0
     units = _BINARY_UNITS if binary else _DECIMAL_UNITS
@@ -27,5 +33,5 @@ def format_size(num_bytes: float, *, binary: bool = True, precision: int = 1) ->
     v, idx = _scale_to_unit(num_bytes, units, base)
 
     if idx == 0:
-        return f"{int(v)} {units[idx]}"
-    return f"{v:.{precision}f} {units[idx]}"
+        return f"{sign}{int(v)} {units[idx]}"
+    return f"{sign}{v:.{precision}f} {units[idx]}"

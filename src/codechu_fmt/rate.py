@@ -28,25 +28,31 @@ def format_rate(
     Other ``unit`` values are treated like ``items`` but with the
     custom label, e.g. ``unit='req'`` → ``"123.4 req/s"``.
 
-    Negative values and NaN render as ``"?"``.
+    NaN renders as ``"?"``. Negative inputs render with a leading
+    ``-`` (e.g. ``-5.0/s``, ``-1.5 MB/s``).
     """
-    if _isnan(units_per_sec) or units_per_sec < 0:
+    if _isnan(units_per_sec):
         return "?"
+
+    sign = ""
+    if units_per_sec < 0:
+        sign = "-"
+        units_per_sec = -units_per_sec
 
     if unit == "bytes":
         v, idx = _scale_to_unit(units_per_sec, _BYTES_PER_SEC_UNITS, 1024.0)
         if idx == 0:
-            return f"{int(v)} {_BYTES_PER_SEC_UNITS[idx]}"
-        return f"{v:.{precision}f} {_BYTES_PER_SEC_UNITS[idx]}"
+            return f"{sign}{int(v)} {_BYTES_PER_SEC_UNITS[idx]}"
+        return f"{sign}{v:.{precision}f} {_BYTES_PER_SEC_UNITS[idx]}"
 
     if unit == "ops":
         v, idx = _scale_to_unit(units_per_sec, _DECIMAL_PREFIXES, 1000.0)
         prefix = _DECIMAL_PREFIXES[idx]
         if idx == 0:
-            return f"{v:.{precision}f} ops/s"
-        return f"{v:.{precision}f}{prefix} ops/s"
+            return f"{sign}{v:.{precision}f} ops/s"
+        return f"{sign}{v:.{precision}f}{prefix} ops/s"
 
     if unit == "items":
-        return f"{units_per_sec:.{precision}f}/s"
+        return f"{sign}{units_per_sec:.{precision}f}/s"
 
-    return f"{units_per_sec:.{precision}f} {unit}/s"
+    return f"{sign}{units_per_sec:.{precision}f} {unit}/s"
